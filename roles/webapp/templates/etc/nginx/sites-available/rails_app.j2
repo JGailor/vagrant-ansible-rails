@@ -1,0 +1,14 @@
+server {
+    listen 80;
+    server_name yourserver.com;
+
+    # Tell Nginx and Passenger where your app's 'public' directory is
+    root /vagrant/public;
+
+    # Turn on Passenger
+    passenger_enabled on;
+    passenger_ruby /usr/local/bin/ruby;
+
+    # Configure Rails
+    rails_env development;
+}

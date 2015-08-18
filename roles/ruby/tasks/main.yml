@@ -1,0 +1,54 @@
+---
+- name: Install packages for Ruby 2.2.2
+  sudo: yes
+  apt: name='{{item}}' state=present update_cache=yes
+  with_items:
+    - git-core
+    - curl
+    - zlib1g-dev
+    - build-essential
+    - libssl-dev
+    - libreadline-dev
+    - libyaml-dev
+    - libsqlite3-dev
+    - sqlite3
+    - libxml2-dev
+    - libxslt1-dev
+    - libcurl4-openssl-dev
+    - python-software-properties
+    - libffi-dev
+
+- name: Download ruby-install
+  get_url: url='https://github.com/postmodern/ruby-install/archive/v0.5.0.tar.gz' dest=/tmp/ruby-install-0.5.0.tar.gz
+
+- name: Unpack ruby-install
+  unarchive: src=/tmp/ruby-install-0.5.0.tar.gz dest=/tmp copy=no
+
+- name: Install ruby-install
+  sudo: yes
+  command: '{{item}}'
+  args:
+    chdir: /tmp/ruby-install-0.5.0
+  with_items:
+    - make
+    - make install
+
+- name: Install ruby 2.2.2
+  sudo: yes
+  command: ruby-install --system ruby 2.2.2
+  args:
+    creates: /usr/local/bin/ruby
+
+- name: Validate ruby 2.2.2 is the default ruby
+  command: ruby -v
+  register: ruby_version
+
+- name: Fail if ruby 2.2.2 is not the default ruby
+  fail: msg='Ruby 2.2.2 is not the correct version'
+  when: "'ruby 2.2.2' not in ruby_version.stdout"
+
+- name: Tell Rubygems not to install documentation
+  lineinfile: "dest=~/.gemrc state=present create=yes line='gem: --no-ri --no-rdoc'"
+
+- name: Install Bundler
+  gem: name=bundler state=latest

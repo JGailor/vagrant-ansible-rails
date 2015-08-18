@@ -1,0 +1,39 @@
+---
+- name: Add the Passenger apt key
+  sudo: yes
+  apt_key: keyserver=keyserver.ubuntu.com id=561F9B9CAC40B2F7 state=present
+
+- name: Install packages to support Passenger apt repository
+  sudo: yes
+  apt: name='{{item}}' state=present update_cache=yes
+  with_items:
+    - apt-transport-https
+    - ca-certificates
+
+- name: Add the Passenger
+  sudo: yes
+  apt_repository: repo='deb https://oss-binaries.phusionpassenger.com/apt/passenger trusty main' state=present
+
+- name: Add the Nginx + Passenger Repository
+  sudo: yes
+  apt: name='{{item}}' state=present update_cache=yes
+  with_items:
+    - nginx-extras
+    - passenger
+
+- name: Replace the passenger config lines in the nginx.conf
+  sudo: yes
+  lineinfile: dest=/etc/nginx/nginx.conf regexp="{{item.match}}" line="{{item.line}}"
+  with_items:
+    - match: "# passenger_root /usr/lib/ruby/vendor_ruby/phusion_passenger/locations.ini;"
+      line:  "        passenger_root /usr/lib/ruby/vendor_ruby/phusion_passenger/locations.ini;"
+    - match: "# passenger_ruby /usr/bin/passenger_free_ruby;"
+      line:  "        passenger_ruby /usr/bin/passenger_free_ruby;"
+
+- name: Move the nginx configuration file for the app into place
+  sudo: yes
+  template: src="etc/nginx/sites-available/rails_app.j2" dest="/etc/nginx/sites-available/rails_app" mode=0644
+
+- name: Symlink the configuration file into the sites-enabled directory
+  sudo: yes
+  file: src="/etc/nginx/sites-available/rails_app" dest="/etc/nginx/sites-enabled/rails_app" state=link
