@@ -1,0 +1,21 @@
+---
+- name: Install mysql
+  sudo: yes
+  apt:  name={{item}} state=present update_cache=true
+  with_items:
+    - mysql-server
+    - python-mysqldb
+
+- name: Make mysql bind to the appropriate port
+  sudo: yes
+  lineinfile: dest=/etc/mysql/my.cnf regexp="bind-address\s*\=\s127\.0\.0\.1" line="bind-address    = 0.0.0.0"
+
+- name: Create a mysql developer account
+  mysql_user: "name=developer password=password priv=*.*:ALL,GRANT state=absent host=localhost"
+
+- name: Create a mysql developer account
+  mysql_user: "name=developer password=password priv=*.*:ALL,GRANT state=present host=%"
+
+- name: Restart mysql
+  sudo: yes
+  service: name=mysql state=restarted
